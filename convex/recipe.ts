@@ -1,4 +1,3 @@
-// convex/recipe.ts
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import OpenAI from "openai";
@@ -6,16 +5,18 @@ import OpenAI from "openai";
 export const getRecipe = action({
   args: { ingredients: v.string() },
   handler: async (ctx, args) => {
-    // 1. Initialize OpenAI using the key from your Convex Dashboard
-    const openai = new OpenAI({ apiKey: process.env.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 });
+    // Convex will look for this in the Dashboard settings (Step 3)
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     
-    // 2. Ask the AI
     const completion = await openai.chat.completions.create({
-      messages: [{ role: "user", content: `Suggest a recipe using: ${args.ingredients}. Keep it simple.` }],
+      messages: [
+        { role: "system", content: "You are a chef. Suggest 3 recipes based on ingredients. Return JSON." },
+        { role: "user", content: `I have: ${args.ingredients}. Give me 3 recipes as JSON: {"recipes": [{"name": "...", "recipe": "..."}]}` }
+      ],
       model: "gpt-4o-mini",
+      response_format: { type: "json_object" }
     });
 
-    // 3. Return the result back to your frontend
-    return completion.choices[0].message.content;
+    return JSON.parse(completion.choices[0].message.content);
   },
 });
